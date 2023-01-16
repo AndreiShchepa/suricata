@@ -188,7 +188,7 @@ static int MetadataDecodeTCPOptions(uint8_t *pkt, uint8_t opt_len, metadata_t *m
     return 0;
 }
 
-int MetadataDecodePacketTCP(metadata_t *meta_data, uint16_t len) {
+int MetadataDecodePacketTCP(metadata_t *meta_data, FlowKey *flow_key, struct FlowKeyDirection *fd, uint16_t len) {
     uint16_t tcp_len;
     int ret;
 
@@ -217,6 +217,8 @@ int MetadataDecodePacketTCP(metadata_t *meta_data, uint16_t len) {
     meta_data->dst_port = rte_be_to_cpu_16(meta_data->tcp_hdr->dst_port);
     meta_data->payload_len = len - tcp_len;
     meta_data->l4_len = tcp_len;
+
+    FlowKeyExtendedInitUnifiedTcp(flow_key, fd, meta_data->tcp_hdr);
 
     return 0;
 }

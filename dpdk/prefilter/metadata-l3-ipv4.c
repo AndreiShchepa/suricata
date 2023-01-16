@@ -338,7 +338,7 @@ int MetadataDecodeIPV4Options(uint8_t *pkt, uint8_t opt_len, metadata_t *meta_da
     return 0;
 }
 
-int MetadataDecodePacketIPv4(metadata_t *meta_data, uint16_t len) {
+int MetadataDecodePacketIPv4(metadata_t *meta_data, FlowKey *flow_key, struct FlowKeyDirection *fd, uint16_t len) {
     int ret;
     int ipv4_len, ipv4_raw_len;
 
@@ -347,7 +347,8 @@ int MetadataDecodePacketIPv4(metadata_t *meta_data, uint16_t len) {
 
     if (fo > 0 || mf >> 13) {
         memset(meta_data, 0x00, sizeof(void*) * 4);
-        return 0;
+        ret = FlowKeyExtendedInitFromMbuf(flow_key, fd, meta_data->pkt);
+        return ret;
     }
 
     if (unlikely(len < IPV4_HEADER_LEN)) {
@@ -383,8 +384,15 @@ int MetadataDecodePacketIPv4(metadata_t *meta_data, uint16_t len) {
         }
     }
 
-    ret = MetadataDecodePacketL4((uint8_t *)meta_data->ipv4_hdr, meta_data, ipv4_raw_len - ipv4_len,
-            meta_data->ipv4_hdr->next_proto_id, ipv4_len);
+    uint16_t l3_hdr_len;
+    uint16_t l3_next_proto;
+
+    l3_next_proto = FlowKeyExtendedInitUnifiedIpv4(flow_key, fd, meta_data->ipv4_hdr, &l3_hdr_len);
+
+//    ret = MetadataDecodePacketL4((uint8_t *)meta_data->ipv4_hdr, meta_data, flow_key, fd,
+//            ipv4_raw_len - ipv4_len, meta_data->ipv4_hdr->next_proto_id, ipv4_len);
+    ret = MetadataDecodePacketL4((uint8_t *)meta_data->ipv4_hdr, meta_data, flow_key, fd,
+            l3_next_proto, l3_hdr_len, ipv4_len);
 
     return ret;
 }

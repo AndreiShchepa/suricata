@@ -86,6 +86,7 @@ typedef struct Metadata {
     struct rte_ipv6_hdr *ipv6_hdr;
     struct rte_tcp_hdr *tcp_hdr;
     struct rte_udp_hdr *udp_hdr;
+    struct rte_mbuf *pkt;
 
     Address src_addr;
     Address dst_addr;
@@ -105,7 +106,7 @@ typedef struct Metadata {
 } metadata_t;
 
 static inline size_t MetadataGetVlanOffset(struct rte_ether_hdr *, uint16_t *);
-int MetadataDecodePacketL4(uint8_t *, metadata_t *, uint8_t, size_t, uint16_t);
-int MetadataDecodePacketL3(struct rte_mbuf *, metadata_t *);
+int MetadataDecodePacketL4(uint8_t *, metadata_t *, FlowKey *, struct FlowKeyDirection *, uint8_t, size_t, uint16_t);
+int MetadataDecodePacketL3(struct rte_mbuf *, metadata_t *, FlowKey *, struct FlowKeyDirection *);
 
 #endif // METADATA_H

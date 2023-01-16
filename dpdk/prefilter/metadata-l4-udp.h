@@ -27,6 +27,6 @@
 
 #include "metadata.h"
 
-int MetadataDecodePacketUDP(metadata_t *, uint16_t);
+int MetadataDecodePacketUDP(metadata_t *, FlowKey *, struct FlowKeyDirection *, uint16_t);
 
 #endif // SURICATA_METADATA_L4_UDP_H

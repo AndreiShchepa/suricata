@@ -27,7 +27,7 @@
 
 #include "metadata.h"
 
-int MetadataDecodePacketTCP(metadata_t *, uint16_t);
+int MetadataDecodePacketTCP(metadata_t *, FlowKey *, struct FlowKeyDirection *, uint16_t);
 static int MetadataDecodeTCPOptions(uint8_t *, uint8_t, metadata_t *);
 
 #endif // SURICATA_METADATA_L4_TCP_H

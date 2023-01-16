@@ -24,7 +24,7 @@
 
 #include "metadata-l4-udp.h"
 
-int MetadataDecodePacketUDP(metadata_t *meta_data, uint16_t len) {
+int MetadataDecodePacketUDP(metadata_t *meta_data, FlowKey *flow_key, struct FlowKeyDirection *fd, uint16_t len) {
     uint16_t udp_raw_len;
 
     if (unlikely(len < UDP_HEADER_LEN)) {
@@ -32,18 +32,20 @@ int MetadataDecodePacketUDP(metadata_t *meta_data, uint16_t len) {
     }
 
     udp_raw_len = rte_be_to_cpu_16(meta_data->udp_hdr->dgram_len);
-    if (unlikely(len < udp_raw_len)) {
-        return UDP_PKT_TOO_SMALL;
-    }
-
-    if (unlikely(len != udp_raw_len)) {
-        return UDP_HLEN_INVALID;
-    }
+//    if (unlikely(len < udp_raw_len)) {
+//        return UDP_PKT_TOO_SMALL;
+//    }
+//
+//    if (unlikely(len != udp_raw_len)) {
+//        return UDP_HLEN_INVALID;
+//    }
 
     meta_data->src_port = rte_be_to_cpu_16(meta_data->udp_hdr->src_port);
     meta_data->dst_port = rte_be_to_cpu_16(meta_data->udp_hdr->dst_port);
     meta_data->payload_len = len - UDP_HEADER_LEN;
     meta_data->l4_len = UDP_HEADER_LEN;
+
+    FlowKeyExtendedInitUnifiedUdp(flow_key, fd, meta_data->udp_hdr);
 
     return 0;
 }

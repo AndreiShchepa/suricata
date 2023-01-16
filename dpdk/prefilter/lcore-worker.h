@@ -25,6 +25,7 @@
 #define LCORE_WORKER_H
 
 #include <stdint-gcc.h>
+#include "metadata.h"
 #include "dev-conf.h"
 #include "stats.h"
 
@@ -86,6 +87,7 @@ struct lcore_values {
     struct rte_mbuf *pkts_to_inspect[2 * BURST_SIZE];
     struct rte_mbuf *pkts_to_bypass[2 * BURST_SIZE];
     struct BypassHashTableData *bypass_data[2 * BURST_SIZE];
+    metadata_t metadata[2 * BURST_SIZE];
 };
 
 int ThreadMain(void *init_values);

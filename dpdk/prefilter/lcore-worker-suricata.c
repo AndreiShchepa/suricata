@@ -613,6 +613,7 @@ static uint32_t MbufAddToRing(
  * packets that cannot be currently bypassed.
  * @param pkts - incoming pkts
  * @param pkt_cnt
+ * @param metadata
  * @param inspect_pkts - expected passed array
  * @param fk_arr - extracted flow keys for lookup
  * @param fd_arr - extracted original flow directions
@@ -622,7 +623,7 @@ static uint32_t MbufAddToRing(
  * @param on_port1 - marks packets (that can not be bypassed) with port origin
  * @return number of packets for bypass
  */
-static uint16_t MbufsBypassSort(struct rte_mbuf **pkts, uint16_t pkt_cnt,
+static uint16_t MbufsBypassSort(struct rte_mbuf **pkts, uint16_t pkt_cnt, metadata_t *metadata,
         struct rte_mbuf **inspect_pkts, FlowKey *fk_arr, struct FlowKeyDirection *fd_arr, ring_buffer *no_inspect_rings,
         uint16_t rings_cnt, bool on_port1)
 {
@@ -641,7 +642,13 @@ static uint16_t MbufsBypassSort(struct rte_mbuf **pkts, uint16_t pkt_cnt,
             if (i < (pkt_cnt - 2))
                 rte_prefetch0(pkts[i + 2]);
         }
-        ret = FlowKeyExtendedInitFromMbuf(&fk_arr[fke_len], &fd_arr[fke_len], pkts[i]);
+
+        memset(&(metadata[i]), 0x00, sizeof(metadata_t));
+        metadata[i].pkt = pkts[i];
+        ret = MetadataDecodePacketL3(pkts[i], &(metadata[i]), &fk_arr[fke_len], &fd_arr[fke_len]);
+        // printf("ret after decoding %d, i = %d, addr = %p, %p\n", ret, i, &(metadata[i]), metadata[i].udp_hdr);
+
+        // ret = FlowKeyExtendedInitFromMbuf(&fk_arr[fke_len], &fd_arr[fke_len], pkts[i]);
         Log().debug("conversion mbuf to FlowKey: %s", ret == 0 ? "success" : "failure");
         if (ret != 0) {
             MbufAddToRing(pkts[i], no_inspect_rings, rings_cnt, on_port1);
@@ -720,8 +727,8 @@ static void PktsReceiveIDS(struct lcore_values *lv)
 
     lv->stats.pkts_p1_rx += pkt_count1;
 
-    pkts_to_inspect_cnt1 = MbufsBypassSort(
-            lv->pkts, pkt_count1, lv->pkts_to_inspect, lv->fke_arr.fk, lv->fke_arr.fd, lv->tmp_ring_bufs, lv->rings_cnt, true);
+    pkts_to_inspect_cnt1 = MbufsBypassSort(lv->pkts, pkt_count1, lv->metadata,
+            lv->pkts_to_inspect, lv->fke_arr.fk, lv->fke_arr.fd,lv->tmp_ring_bufs, lv->rings_cnt, true);
     lv->stats.pkts_inspected += pkts_to_inspect_cnt1;
 
     // todo: optimization -  possibly make looked up keys unique to reduce key set to lookup
@@ -756,9 +763,9 @@ static void PktsReceiveIPS(struct lcore_values *lv)
     lv->stats.pkts_p2_rx += pkt_count2;
 
     pkts_to_inspect_cnt1 = MbufsBypassSort(
-            lv->pkts, pkt_count1, lv->pkts_to_inspect, lv->fke_arr.fk, lv->fke_arr.fd, lv->tmp_ring_bufs, lv->rings_cnt, true);
+            lv->pkts, pkt_count1, NULL, lv->pkts_to_inspect, lv->fke_arr.fk, lv->fke_arr.fd, lv->tmp_ring_bufs, lv->rings_cnt, true);
     pkts_to_inspect_cnt2 =
-            MbufsBypassSort(lv->pkts + pkt_count1, pkt_count2, &lv->pkts_to_inspect[pkts_to_inspect_cnt1],
+            MbufsBypassSort(lv->pkts + pkt_count1, pkt_count2, NULL, &lv->pkts_to_inspect[pkts_to_inspect_cnt1],
                     &lv->fke_arr.fk[pkts_to_inspect_cnt1], &lv->fke_arr.fd[pkts_to_inspect_cnt1], lv->tmp_ring_bufs, lv->rings_cnt, false);
     lv->stats.pkts_inspected += pkts_to_inspect_cnt1 + pkts_to_inspect_cnt2;
 
@@ -804,51 +811,53 @@ static void PktsReceive(struct lcore_values *lv)
     }
 }
 
-static void SetMetadataToMbuf(uint16_t len_buf, uint16_t num_offlds, uint16_t *idx_offlds, struct rte_mbuf **buf) {
+static void SetMetadataToMbuf(uint16_t len_buf, uint16_t num_offlds,
+        metadata_t *metadata, uint16_t *idx_offlds, struct rte_mbuf **buf) {
     uint16_t offset;
     void *priv_size;
 
     for (int j = 0; j < len_buf; j++) {
         // fill the memory with 0s
-        metadata_t metaData;
-        memset(&metaData, 0x00, sizeof(void*) * 4);
+        //metadata_t metaData;
+        //memset(&metaData, 0x00, sizeof(void*) * 4);
 
         offset = num_offlds * sizeof(uint16_t);
         priv_size = rte_mbuf_to_priv(buf[j]);
 
-        // decode L# and L4 layers and fill the structure with metadata
-        if (MetadataDecodePacketL3(buf[j], &metaData)) {
-            Log().error(99, "Decoding of the packets failed\n");
-            memset(&metaData, 0x00, sizeof(void*) * 4);
-        }
+        // decode L3 and L4 layers and fill the structure with metadata
+//        if (MetadataDecodePacketL3(buf[j], &metaData)) {
+//            Log().error(99, "Decoding of the packets failed\n");
+//            memset(&metaData, 0x00, sizeof(void*) * 4);
+//        }
 
         for (int t = 0; t < num_offlds; t++) {
             switch(idx_offlds[t]) {
                 case IPV4_ID:
-                    SET_OFFSET(metaData.ipv4_hdr);
-                    SET_DATA_TO_PRIV(&metaData.src_addr, sizeof(Address));
-                    SET_DATA_TO_PRIV(&metaData.dst_addr, sizeof(Address));
-                    SET_DATA_TO_PRIV(&metaData.events, sizeof(PacketEngineEvents));
+                    SET_OFFSET(metadata[j].ipv4_hdr);
+                    SET_DATA_TO_PRIV(&metadata[j].src_addr, sizeof(Address));
+                    SET_DATA_TO_PRIV(&metadata[j].dst_addr, sizeof(Address));
+                    SET_DATA_TO_PRIV(&metadata[j].events, sizeof(PacketEngineEvents));
                     break;
                 case IPV6_ID:
-                    SET_OFFSET(metaData.ipv6_hdr);
-                    SET_DATA_TO_PRIV(&metaData.src_addr, sizeof(Address));
-                    SET_DATA_TO_PRIV(&metaData.dst_addr, sizeof(Address));
+                    SET_OFFSET(metadata[j].ipv6_hdr);
+                    SET_DATA_TO_PRIV(&metadata[j].src_addr, sizeof(Address));
+                    SET_DATA_TO_PRIV(&metadata[j].dst_addr, sizeof(Address));
                     break;
                 case TCP_ID:
-                    SET_OFFSET(metaData.tcp_hdr);
-                    SET_DATA_TO_PRIV(&metaData.src_port, sizeof(Port));
-                    SET_DATA_TO_PRIV(&metaData.dst_port, sizeof(Port));
-                    SET_DATA_TO_PRIV(&metaData.payload_len, sizeof(uint16_t));
-                    SET_DATA_TO_PRIV(&metaData.l4_len, sizeof(uint16_t));
-                    SET_DATA_TO_PRIV(&metaData.events, sizeof(PacketEngineEvents));
+                    SET_OFFSET(metadata[j].tcp_hdr);
+                    SET_DATA_TO_PRIV(&metadata[j].src_port, sizeof(Port));
+                    SET_DATA_TO_PRIV(&metadata[j].dst_port, sizeof(Port));
+                    SET_DATA_TO_PRIV(&metadata[j].payload_len, sizeof(uint16_t));
+                    SET_DATA_TO_PRIV(&metadata[j].l4_len, sizeof(uint16_t));
+                    SET_DATA_TO_PRIV(&metadata[j].events, sizeof(PacketEngineEvents));
                     break;
                 case UDP_ID:
-                    SET_OFFSET(metaData.udp_hdr);
-                    SET_DATA_TO_PRIV(&metaData.src_port, sizeof(Port));
-                    SET_DATA_TO_PRIV(&metaData.dst_port, sizeof(Port));
-                    SET_DATA_TO_PRIV(&metaData.payload_len, sizeof(uint16_t));
-                    SET_DATA_TO_PRIV(&metaData.l4_len, sizeof(uint16_t));
+                    //printf("pref %d %d %p\n", metadata[j].src_port, metadata[j].dst_port, metadata[j].udp_hdr);
+                    SET_OFFSET(metadata[j].udp_hdr);
+                    SET_DATA_TO_PRIV(&metadata[j].src_port, sizeof(Port));
+                    SET_DATA_TO_PRIV(&metadata[j].dst_port, sizeof(Port));
+                    SET_DATA_TO_PRIV(&metadata[j].payload_len, sizeof(uint16_t));
+                    SET_DATA_TO_PRIV(&metadata[j].l4_len, sizeof(uint16_t));
                     break;
                 default:
                     break;
@@ -869,8 +878,9 @@ static void PktsEnqueue(struct lcore_values *lv)
             Log().error(EINVAL, "Ring buffer length over the buffer");
 
         // if no one offload is not required, skip offloads setting up part
-        if (lv->cnt_offlds_suri_requested > 0) {
-            SetMetadataToMbuf(lv->tmp_ring_bufs[i].len, lv->cnt_offlds_suri_requested, lv->idxes_offlds_suri_requested, lv->tmp_ring_bufs[i].buf);
+        if (lv->tmp_ring_bufs[i].len > 0 && lv->cnt_offlds_suri_requested > 0) {
+            SetMetadataToMbuf(lv->tmp_ring_bufs[i].len, lv->cnt_offlds_suri_requested,
+                    lv->metadata, lv->idxes_offlds_suri_requested, lv->tmp_ring_bufs[i].buf);
         }
 
         pkt_count = rte_ring_enqueue_burst(lv->rings_from_pf[i], (void **)lv->tmp_ring_bufs[i].buf,

@@ -30,12 +30,13 @@ void MetadataIpv6ConvertTo(Address *dst, uint8_t *src) {
     memcpy(&(dst->address.address_un_data8[0]), src, sizeof(uint32_t)*4);
 }
 
-int MetadataDecodePacketIPv6(metadata_t *meta_data, uint16_t len) {
+int MetadataDecodePacketIPv6(metadata_t *meta_data, FlowKey *flow_key, struct FlowKeyDirection *fd, uint16_t len) {
     int ret;
     uint16_t ipv6_raw_len = 0;
 
     if (meta_data->ipv6_hdr->proto == 44) {
         memset(meta_data, 0x00, sizeof(void*) * 4);
+        ret = FlowKeyExtendedInitFromMbuf(flow_key, fd, meta_data->pkt);
         return 0;
     }
 
@@ -56,8 +57,15 @@ int MetadataDecodePacketIPv6(metadata_t *meta_data, uint16_t len) {
     MetadataIpv6ConvertTo(&meta_data->src_addr, &meta_data->ipv6_hdr->src_addr[0]);
     MetadataIpv6ConvertTo(&meta_data->dst_addr, &meta_data->ipv6_hdr->dst_addr[0]);
 
-    ret = MetadataDecodePacketL4((uint8_t *)meta_data->ipv6_hdr, meta_data, ipv6_raw_len - IPV6_HEADER_LEN,
-            meta_data->ipv6_hdr->proto, IPV6_HEADER_LEN);
+    uint16_t l3_hdr_len;
+    uint16_t l3_next_proto;
+
+    l3_next_proto = FlowKeyExtendedInitUnifiedIpv6(flow_key, fd, meta_data->ipv6_hdr, &l3_hdr_len);
+
+//    ret = MetadataDecodePacketL4((uint8_t *)meta_data->ipv6_hdr, meta_data, flow_key, fd,
+//            ipv6_raw_len - IPV6_HEADER_LEN, meta_data->ipv6_hdr->proto, IPV6_HEADER_LEN);
+    ret = MetadataDecodePacketL4((uint8_t *)meta_data->ipv6_hdr, meta_data, flow_key, fd,
+            l3_next_proto, l3_hdr_len, IPV6_HEADER_LEN);
 
     return ret;
 }

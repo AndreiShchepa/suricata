@@ -760,6 +760,7 @@ static TmEcode ReceiveDPDKLoop(ThreadVars *tv, void *data, void *slot)
                         READ_DATA_FROM_PRIV(&p->dp, sizeof(Port));
                         READ_DATA_FROM_PRIV(&p->payload_len, sizeof(uint16_t));
                         READ_DATA_FROM_PRIV(&p->dpdk_v.PF_l4_len, sizeof(uint16_t));
+                        //printf("suri %d %d\n", p->sp, p->dp);
                         p->metadata_flags |= UDP_OFFLOAD(1);
                         break;
                 }

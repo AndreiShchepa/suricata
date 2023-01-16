@@ -114,6 +114,12 @@ int FlowKeyInitFromFlow(FlowKey *fk, Flow *f);
 struct FlowKeyDirection FlowKeyUnify(FlowKey *fk);
 void FlowKeyReconstruct(FlowKey *fk, struct FlowKeyDirection *fd);
 int FlowKeyExtendedInitFromMbuf(FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_mbuf *mbuf);
+uint16_t FlowKeyExtendedInitUnifiedIpv6(
+        FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_ipv6_hdr *ip6_hdr, uint16_t *hdr_len);
+uint16_t FlowKeyExtendedInitUnifiedIpv4(
+        FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_ipv4_hdr *ip4_hdr, uint16_t *hdr_len);
+void FlowKeyExtendedInitUnifiedTcp(FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_tcp_hdr *tcp_hdr);
+void FlowKeyExtendedInitUnifiedUdp(FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_udp_hdr *udp_hdr);
 
 int DPDKBypassManagerAssistantInit(ThreadVars *th_v, struct timespec *curtime, void *data);
 int DPDKCheckBypassMessages(

@@ -487,7 +487,7 @@ static uint16_t FlowKeyExtendedInitUnifiedVlan(
     return vlan_hdrs_len;
 }
 
-static uint16_t FlowKeyExtendedInitUnifiedIpv4(
+uint16_t FlowKeyExtendedInitUnifiedIpv4(
         FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_ipv4_hdr *ip4_hdr, uint16_t *hdr_len)
 {
     if (ip4_hdr->src_addr < ip4_hdr->dst_addr) {
@@ -505,7 +505,7 @@ static uint16_t FlowKeyExtendedInitUnifiedIpv4(
     return ip4_hdr->next_proto_id;
 }
 
-static uint16_t FlowKeyExtendedInitUnifiedIpv6(
+uint16_t FlowKeyExtendedInitUnifiedIpv6(
         FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_ipv6_hdr *ip6_hdr, uint16_t *hdr_len)
 {
     uint32_t *ip6_src = (uint32_t *)ip6_hdr->src_addr;
@@ -526,7 +526,7 @@ static uint16_t FlowKeyExtendedInitUnifiedIpv6(
     return ip6_hdr->proto;
 }
 
-static void FlowKeyExtendedInitUnifiedTcp(FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_tcp_hdr *tcp_hdr)
+void FlowKeyExtendedInitUnifiedTcp(FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_tcp_hdr *tcp_hdr)
 {
     flow_key->proto = IPPROTO_TCP;
     if (rte_cpu_to_be_16(tcp_hdr->src_port) < rte_cpu_to_be_16(tcp_hdr->dst_port)) {
@@ -540,7 +540,7 @@ static void FlowKeyExtendedInitUnifiedTcp(FlowKey *flow_key, struct FlowKeyDirec
     }
 }
 
-static void FlowKeyExtendedInitUnifiedUdp(FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_udp_hdr *udp_hdr)
+void FlowKeyExtendedInitUnifiedUdp(FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_udp_hdr *udp_hdr)
 {
     flow_key->proto = IPPROTO_UDP;
     if (rte_cpu_to_be_16(udp_hdr->src_port) < rte_cpu_to_be_16(udp_hdr->dst_port)) {
