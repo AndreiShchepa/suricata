@@ -60,7 +60,8 @@ int MetadataDecodePacketL4(uint8_t *ptr, metadata_to_suri_t *metadata_to_suri, m
     return ret;
 }
 
-int MetadataDecodePacketL3(struct rte_mbuf *pkt, metadata_to_suri_t *metadata_to_suri, metadata_to_suri_help_t *metadata_to_suri_help)
+int MetadataDecodePacketL3(struct rte_mbuf *pkt, metadata_to_suri_t *metadata_to_suri, metadata_to_suri_help_t *metadata_to_suri_help,
+        metadata_to_suri_help_t *metadata_help, FlowKey *flow_key)
 {
     struct rte_ether_hdr *eth_hdr;
     uint16_t ether_type;
@@ -73,7 +74,8 @@ int MetadataDecodePacketL3(struct rte_mbuf *pkt, metadata_to_suri_t *metadata_to
 
     if (ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4)) {
         metadata_to_suri_help->ipv4_hdr = (struct rte_ipv4_hdr *)((char *)(eth_hdr + 1) + offset);
-        ret = MetadataDecodePacketIPv4(metadata_to_suri, metadata_to_suri_help, pkt->pkt_len - ETHERNET_HEADER_LEN);
+        printf("addrFlowKeyIPV4 %p ??? %p - addrAndreiDecodingIPV4\n", metadata_help->ipv4_hdr, metadata_to_suri_help->ipv4_hdr);
+        ret = MetadataDecodePacketIPv4(metadata_to_suri, metadata_to_suri_help, pkt->pkt_len - ETHERNET_HEADER_LEN, flow_key);
     } else if (ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV6)) {
         metadata_to_suri_help->ipv6_hdr = (struct rte_ipv6_hdr *)((char *)(eth_hdr + 1) + offset);
         ret = MetadataDecodePacketIPv6(metadata_to_suri, metadata_to_suri_help, pkt->pkt_len - ETHERNET_HEADER_LEN);

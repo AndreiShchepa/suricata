@@ -52,6 +52,7 @@
 
 typedef struct {
     struct rte_mbuf *buf[2 * BURST_SIZE];
+    bool decoded[2 * BURST_SIZE];
     uint16_t len;
 } ring_buffer;
 
@@ -86,6 +87,7 @@ struct lcore_values {
     struct rte_mbuf *pkts_to_inspect[2 * BURST_SIZE];
     struct rte_mbuf *pkts_to_bypass[2 * BURST_SIZE];
     struct BypassHashTableData *bypass_data[2 * BURST_SIZE];
+    metadata_to_suri_help_t metadata_to_suri_help[2 * BURST_SIZE];
 };
 
 int ThreadMain(void *init_values);

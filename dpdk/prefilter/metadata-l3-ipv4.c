@@ -339,7 +339,7 @@ int MetadataDecodeIPV4Options(uint8_t *pkt, metadata_to_suri_t *metadata_to_suri
     return 0;
 }
 
-int MetadataDecodePacketIPv4(metadata_to_suri_t *metadata_to_suri, metadata_to_suri_help_t *metadata_to_suri_help, uint16_t len) {
+int MetadataDecodePacketIPv4(metadata_to_suri_t *metadata_to_suri, metadata_to_suri_help_t *metadata_to_suri_help, uint16_t len, FlowKey *flow_key) {
     int ret;
     int ipv4_len, ipv4_raw_len;
 
@@ -375,6 +375,26 @@ int MetadataDecodePacketIPv4(metadata_to_suri_t *metadata_to_suri, metadata_to_s
 
     MetadataIpv4ConvertTo(&metadata_to_suri->metadata_ipv4.src_addr, metadata_to_suri_help->ipv4_hdr->src_addr);
     MetadataIpv4ConvertTo(&metadata_to_suri->metadata_ipv4.dst_addr, metadata_to_suri_help->ipv4_hdr->dst_addr);
+
+    printf("srcIpFlow - %d.%d.%d.%d ??? %d.%d.%d.%d - srcIpAndreiDecoding\n",
+            flow_key->src.address.address_un_data8[0],
+            flow_key->src.address.address_un_data8[1],
+            flow_key->src.address.address_un_data8[2],
+            flow_key->src.address.address_un_data8[3],
+            metadata_to_suri->metadata_ipv4.src_addr.address.address_un_data8[0],
+            metadata_to_suri->metadata_ipv4.src_addr.address.address_un_data8[1],
+            metadata_to_suri->metadata_ipv4.src_addr.address.address_un_data8[2],
+            metadata_to_suri->metadata_ipv4.src_addr.address.address_un_data8[3]);
+
+    printf("dstIpFlow - %d.%d.%d.%d ??? %d.%d.%d.%d - dstIpAndreiDecoding\n\n",
+            flow_key->dst.address.address_un_data8[0],
+            flow_key->dst.address.address_un_data8[1],
+            flow_key->dst.address.address_un_data8[2],
+            flow_key->dst.address.address_un_data8[3],
+            metadata_to_suri->metadata_ipv4.dst_addr.address.address_un_data8[0],
+            metadata_to_suri->metadata_ipv4.dst_addr.address.address_un_data8[1],
+            metadata_to_suri->metadata_ipv4.dst_addr.address.address_un_data8[2],
+            metadata_to_suri->metadata_ipv4.dst_addr.address.address_un_data8[3]);
 
     uint8_t ip_opt_len = ipv4_len - IPV4_HEADER_LEN;
     if (ip_opt_len > 0) {

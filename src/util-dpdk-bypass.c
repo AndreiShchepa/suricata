@@ -564,7 +564,7 @@ static void FlowKeyExtendedInitUnifiedUdp(FlowKey *flow_key, struct FlowKeyDirec
  * @param mbuf source of information
  * @return < 0 when error occurs, 0 on success, 1 when parsing hits unsupported protocol
  */
-int FlowKeyExtendedInitFromMbuf(FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_mbuf *mbuf)
+int FlowKeyExtendedInitFromMbuf(FlowKey *flow_key, struct FlowKeyDirection *fd, metadata_to_suri_help_t *metadata_help, struct rte_mbuf *mbuf)
 {
     uint16_t l3_hdr_len;
     uint16_t l3_next_proto;
@@ -583,26 +583,32 @@ int FlowKeyExtendedInitFromMbuf(FlowKey *flow_key, struct FlowKeyDirection *fd, 
 
     if (ether_hdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV4)) {
         struct rte_ipv4_hdr *ip4_hdr = (void *)ether_hdr + sizeof(struct rte_ether_hdr);
+        metadata_help->ipv4_hdr = ip4_hdr;
         l3_next_proto = FlowKeyExtendedInitUnifiedIpv4(flow_key, fd, ip4_hdr, &l3_hdr_len);
 
         if (l3_next_proto == IPPROTO_TCP) {
             struct rte_tcp_hdr *tcp_hdr = (void *)ip4_hdr + l3_hdr_len;
+            metadata_help->tcp_hdr = tcp_hdr;
             FlowKeyExtendedInitUnifiedTcp(flow_key, fd, tcp_hdr);
         } else if (l3_next_proto == IPPROTO_UDP) {
             struct rte_udp_hdr *udp_hdr = (void *)ip4_hdr + l3_hdr_len;
+            metadata_help->udp_hdr = udp_hdr;
             FlowKeyExtendedInitUnifiedUdp(flow_key, fd, udp_hdr);
         } else {
             return 1;
         }
     } else if (ether_hdr->ether_type == rte_cpu_to_be_16(RTE_ETHER_TYPE_IPV6)) {
         struct rte_ipv6_hdr *ip6_hdr = (void *)ether_hdr + sizeof(struct rte_ether_hdr);
+        metadata_help->ipv6_hdr = ip6_hdr;
         l3_next_proto = FlowKeyExtendedInitUnifiedIpv6(flow_key, fd, ip6_hdr, &l3_hdr_len);
 
         if (l3_next_proto == IPPROTO_TCP) {
             struct rte_tcp_hdr *tcp_hdr = (void *)ip6_hdr + l3_hdr_len;
+            metadata_help->tcp_hdr = tcp_hdr;
             FlowKeyExtendedInitUnifiedTcp(flow_key, fd, tcp_hdr);
         } else if (l3_next_proto == IPPROTO_UDP) {
             struct rte_udp_hdr *udp_hdr = (void *)ip6_hdr + sizeof(struct rte_ipv6_hdr);
+            metadata_help->udp_hdr = udp_hdr;
             FlowKeyExtendedInitUnifiedUdp(flow_key, fd, udp_hdr);
         } else {
             return 1;

@@ -61,6 +61,6 @@
 
 static inline size_t MetadataGetVlanOffset(struct rte_ether_hdr *, uint16_t *);
 int MetadataDecodePacketL4(uint8_t *, metadata_to_suri_t *, metadata_to_suri_help_t *, uint8_t, size_t, uint16_t);
-int MetadataDecodePacketL3(struct rte_mbuf *, metadata_to_suri_t *, metadata_to_suri_help_t *);
+int MetadataDecodePacketL3(struct rte_mbuf *, metadata_to_suri_t *, metadata_to_suri_help_t *, metadata_to_suri_help_t *, FlowKey *);
 
 #endif // METADATA_H

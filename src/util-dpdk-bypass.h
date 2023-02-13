@@ -113,7 +113,7 @@ int FlowKeyInitFromFlow(FlowKey *fk, Flow *f);
 
 struct FlowKeyDirection FlowKeyUnify(FlowKey *fk);
 void FlowKeyReconstruct(FlowKey *fk, struct FlowKeyDirection *fd);
-int FlowKeyExtendedInitFromMbuf(FlowKey *flow_key, struct FlowKeyDirection *fd, struct rte_mbuf *mbuf);
+int FlowKeyExtendedInitFromMbuf(FlowKey *flow_key, struct FlowKeyDirection *fd, metadata_to_suri_help_t *metadata_help, struct rte_mbuf *mbuf);
 
 int DPDKBypassManagerAssistantInit(ThreadVars *th_v, struct timespec *curtime, void *data);
 int DPDKCheckBypassMessages(

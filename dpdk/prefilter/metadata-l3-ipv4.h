@@ -41,7 +41,7 @@ typedef struct IPV4Options_ {
 } IPV4Options;
 
 void MetadataIpv4ConvertTo(Address *, uint32_t);
-int MetadataDecodePacketIPv4(metadata_to_suri_t *, metadata_to_suri_help_t *, uint16_t);
+int MetadataDecodePacketIPv4(metadata_to_suri_t *, metadata_to_suri_help_t *, uint16_t, FlowKey *);
 static int MetadataDecodeIPV4Options(uint8_t *, metadata_to_suri_t *, uint8_t);
 static int MetadataIPV4OptValidateTimestamp(const IPV4Opt *);
 static int MetadataIPV4OptValidateRoute(const IPV4Opt *);
