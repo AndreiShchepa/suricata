@@ -41,11 +41,11 @@
 #include "util-napatech.h"
 #endif /* HAVE_NAPATECH */
 
-enum oofldsIdxsPf {
-    IPV4_BIT,
-    IPV6_BIT,
-    TCP_BIT,
-    UDP_BIT
+enum ofldsIdxsPf {
+    IPV4_ID,
+    IPV6_ID,
+    TCP_ID,
+    UDP_ID
 };
 
 typedef enum {
@@ -653,8 +653,6 @@ typedef struct Packet_
 #ifdef HAVE_NAPATECH
     NapatechPacketVars ntpv;
 #endif
-
-    uint8_t metadata_flags;
 } Packet;
 
 /** highest mtu of the interfaces we monitor */
